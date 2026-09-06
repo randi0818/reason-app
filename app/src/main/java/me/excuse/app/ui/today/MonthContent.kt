@@ -186,9 +186,9 @@ private fun bucketColor(minutes: Int): Color {
     val ramp = LocalAppColors.current.heatmap
     return when {
         minutes <= 0 -> ramp[0]
-        minutes < 15 -> ramp[1]
-        minutes < 45 -> ramp[2]
-        minutes < 90 -> ramp[3]
+        minutes < 30 -> ramp[1]
+        minutes < 90 -> ramp[2]
+        minutes < 180 -> ramp[3]
         else -> ramp[4]
     }
 }
@@ -241,12 +241,12 @@ private fun MonthLegend(modifier: Modifier = Modifier) {
             color = Muted,
             style = TextStyle(fontSize = 11.sp, letterSpacing = 0.5.sp)
         )
-        listOf(0, 10, 30, 60, 120).forEach { mins ->
+        LocalAppColors.current.heatmap.forEach { color ->
             Box(
                 Modifier
                     .width(14.dp)
                     .height(14.dp)
-                    .background(bucketColor(mins))
+                    .background(color)
             )
         }
         Text(
