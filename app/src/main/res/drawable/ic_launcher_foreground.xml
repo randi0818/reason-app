@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Adaptive icon 前景。viewport 108，安全区 21-87（中央 66×66）。
+
+  设计：两条实心 pause bar + 一个实心方块，共享全局横向渐变 #888888 → #2A2A2A。
+  - 两条 bar：12×36 实心，外框 (34,36)→(46,72) 和 (52,36)→(64,72)，bar 间距 6
+  - 实心方块（句点）：6×6，外框 (68,66)→(74,72)，跟右 bar 底部 y=72 对齐
+  - 整组 40×36，居中于 (54,54)；占安全区 ~60%
+
+  渐变：linear，从 x=34（左 bar 左边）到 x=74（句点右边）
+  - 三个元素 share 同一渐变定义，按各自 x 区段采样
+  - 亮端 #888 / 暗端 #2A：避免纯黑"太硬"的视觉冲击，
+    同时保留足够对比让"从左到右加深"的层级可读
+
+  语义："||." 暂停加句点——左 bar → 右 bar → 句点，颜色逐渐加深，
+  视觉重量自然落在右下的句点上。
+
+  monochrome（Android 13+）：渐变会变成 alpha tint 的过渡，依然有层级。
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- 左 bar：实心，全局渐变左段 -->
+    <path android:pathData="M34,36 h12 v36 h-12 z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startColor="#888888"
+                android:endColor="#2A2A2A"
+                android:startX="34"
+                android:startY="54"
+                android:endX="74"
+                android:endY="54"
+                android:type="linear" />
+        </aapt:attr>
+    </path>
+    <!-- 右 bar：实心，全局渐变中段 -->
+    <path android:pathData="M52,36 h12 v36 h-12 z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startColor="#888888"
+                android:endColor="#2A2A2A"
+                android:startX="34"
+                android:startY="54"
+                android:endX="74"
+                android:endY="54"
+                android:type="linear" />
+        </aapt:attr>
+    </path>
+    <!-- 句点：实心，全局渐变右段（最深） -->
+    <path android:pathData="M68,66 h6 v6 h-6 z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startColor="#888888"
+                android:endColor="#2A2A2A"
+                android:startX="34"
+                android:startY="54"
+                android:endX="74"
+                android:endY="54"
+                android:type="linear" />
+        </aapt:attr>
+    </path>
+</vector>

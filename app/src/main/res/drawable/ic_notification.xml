@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  状态栏 small icon 只能使用透明底的单色 alpha 蒙版，不能直接引用带背景和渐变的
+  adaptive launcher icon。这里保留当前 app 图标的“||.”轮廓，由系统按通知主题着色。
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M3,4h5v16H3zM11,4h5v16h-5zM18,17h3v3h-3z" />
+</vector>

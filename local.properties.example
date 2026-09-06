@@ -1,0 +1,6 @@
+# 复制本文件为 local.properties，并把下面这行的路径改成你电脑上 Android SDK 的实际位置。
+# Windows 默认安装在: C:\Users\你的用户名\AppData\Local\Android\Sdk
+# 在 Android Studio 里看：File → Settings → Appearance & Behavior → System Settings → Android SDK，最上面那行就是路径。
+# 注意：Windows 路径里的反斜杠 \ 在这里要写成两个 \\，或者直接用正斜杠 /
+
+sdk.dir=C:\\Users\\YOUR_USERNAME\\AppData\\Local\\Android\\Sdk

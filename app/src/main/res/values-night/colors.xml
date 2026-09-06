@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 覆盖默认 paper 用于 dark mode 冷启动；values/colors.xml 仍是 light 值 -->
+    <color name="paper">#0E0E0E</color>
+</resources>

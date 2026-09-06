@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">给一个理由</string>
+    <string name="notification_channel_name">监控运行中</string>
+    <string name="notification_channel_desc">用于保持后台监控的常驻通知</string>
+    <string name="notification_title">运行中</string>
+    <string name="notification_text">打开受监控的 app 时会请你写一个理由</string>
+    <string name="notification_active_text">正在计时 · 剩余 %1$d 分钟</string>
+    <string name="app_category_game">游戏</string>
+    <string name="app_category_social">社交</string>
+    <string name="app_category_media">影音</string>
+    <string name="app_category_reading">阅读</string>
+    <string name="app_category_shopping">购物</string>
+    <string name="app_category_productivity">效率与 AI</string>
+    <string name="app_category_lifestyle">生活服务</string>
+    <string name="app_category_finance">金融</string>
+    <string name="app_category_tools">工具</string>
+    <string name="app_category_other">其他</string>
+    <string name="app_category_group_header">%1$s · %2$d</string>
+    <string name="app_category_menu_title">手动归类</string>
+    <string name="app_category_menu_subtitle">选择这个 app 所属的分类</string>
+    <string name="app_category_follow_system">自动归类</string>
+</resources>
