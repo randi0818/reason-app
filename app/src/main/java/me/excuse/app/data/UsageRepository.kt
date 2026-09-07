@@ -190,14 +190,45 @@ class UsageRepository(private val db: AppDatabase) : UsageRepositoryContract {
         TimeUtil.endOfDayMillis(TimeUtil.today())
     )
 
-    override suspend fun usageExportSnapshot() = db.withTransaction {
-        UsageExportSnapshot(
-            sessions = db.usageSessions().allOnce(),
-            events = db.interceptEvents().allOnce(),
-            monitoredApps = db.monitoredApps().allOnce(),
-            categoryOverrides = db.appCategories().allOnce(),
+    override suspend fun exportUsage(consumer: UsageExportConsumer): Int = db.withTransaction {
+        val sessions = consumeExportPages(
+            fetch = { time, id -> db.usageSessions().exportPage(time, id, 256) },
+            timestamp = { it.startTime },
+            id = { it.id },
+            consume = consumer::session,
         )
+        consumer.beginEvents()
+        val events = consumeExportPages(
+            fetch = { time, id -> db.interceptEvents().exportPage(time, id, 256) },
+            timestamp = { it.at },
+            id = { it.id },
+            consume = consumer::event,
+        )
+        consumer.finish(db.monitoredApps().allOnce(), db.appCategories().allOnce())
+        sessions + events
     }
+
+    override suspend fun historyCountsBefore(beforeMillis: Long): HistoryRecordCounts = db.withTransaction {
+        require(beforeMillis <= TimeUtil.startOfTodayMillis()) { "只能清理今天之前的记录" }
+        cleanupCounts(beforeMillis)
+    }
+
+    override suspend fun clearHistoryBefore(
+        beforeMillis: Long,
+        expected: HistoryRecordCounts,
+    ): HistoryRecordCounts? = db.withTransaction {
+        require(beforeMillis <= TimeUtil.startOfTodayMillis()) { "只能清理今天之前的记录" }
+        if (cleanupCounts(beforeMillis) != expected) return@withTransaction null
+        // 先删除关联结果，否则删掉 session 后子查询就找不到该删的 STARTED 了。
+        val events = db.interceptEvents().deleteBefore(beforeMillis)
+        val sessions = db.usageSessions().deleteBefore(beforeMillis)
+        HistoryRecordCounts(sessions, events)
+    }
+
+    private suspend fun cleanupCounts(beforeMillis: Long) = HistoryRecordCounts(
+        db.usageSessions().cleanupCount(beforeMillis),
+        db.interceptEvents().cleanupCount(beforeMillis),
+    )
 
     override fun reasonWallForRollingDays(n: Int) = db.usageSessions()
         .reasonOccurrencesBetween(

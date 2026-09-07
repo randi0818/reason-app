@@ -14,12 +14,13 @@ open class FakeUsageRepository : UsageRepositoryContract {
     override fun appCategoryOverrides(): Flow<Map<String, AppCategory>> = flowOf(emptyMap())
     override suspend fun setAppCategory(packageName: String, category: AppCategory?) = Unit
     override suspend fun enabledPackages(): Set<String> = emptySet()
-    override suspend fun usageExportSnapshot() = UsageExportSnapshot(
-        sessions = emptyList(),
-        events = emptyList(),
-        monitoredApps = emptyList(),
-        categoryOverrides = emptyList(),
-    )
+    override suspend fun exportUsage(consumer: UsageExportConsumer): Int {
+        consumer.beginEvents()
+        consumer.finish(emptyList(), emptyList())
+        return 0
+    }
+    override suspend fun historyCountsBefore(beforeMillis: Long) = HistoryRecordCounts(0, 0)
+    override suspend fun clearHistoryBefore(beforeMillis: Long, expected: HistoryRecordCounts): HistoryRecordCounts? = expected
     override suspend fun setMonitored(packageName: String, appName: String, enabled: Boolean) = Unit
     override suspend fun reasonUseCountsTodayFor(packageName: String): Map<String, Int> = emptyMap()
     override suspend fun reasonUseCountToday(packageName: String, normalized: String) = 0

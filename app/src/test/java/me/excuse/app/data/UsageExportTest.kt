@@ -19,16 +19,19 @@ class UsageExportTest {
         events: List<InterceptEvent> = emptyList(),
         monitoredApps: List<MonitoredApp> = emptyList(),
         categoryOverrides: List<AppCategoryOverride> = emptyList(),
-    ): String = buildUsageExportJson(
-        exportedAtMillis = 0L,
-        appVersion = "0.1.0",
-        timeZoneId = "Asia/Shanghai",
-        sessions = sessions,
-        events = events,
-        monitoredApps = monitoredApps,
-        categoryOverrides = categoryOverrides,
-        toIso = { millis -> "T$millis" },
-    )
+    ): String = buildString {
+        val writer = UsageExportJsonWriter(
+            output = this,
+            exportedAtMillis = 0L,
+            appVersion = "0.1.0",
+            timeZoneId = "Asia/Shanghai",
+            toIso = { millis -> "T$millis" },
+        )
+        sessions.forEach(writer::session)
+        writer.beginEvents()
+        events.forEach(writer::event)
+        writer.finish(monitoredApps, categoryOverrides)
+    }
 
     private fun session(
         id: Long = 1L,

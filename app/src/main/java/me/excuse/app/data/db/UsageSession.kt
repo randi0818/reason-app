@@ -1,9 +1,13 @@
 package me.excuse.app.data.db
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "usage_session")
+@Entity(
+    tableName = "usage_session",
+    indices = [Index("startTime"), Index("endTime"), Index(value = ["packageName", "startTime"])],
+)
 data class UsageSession(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val packageName: String,

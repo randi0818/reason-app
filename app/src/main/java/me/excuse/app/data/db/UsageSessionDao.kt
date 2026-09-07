@@ -10,8 +10,19 @@ interface UsageSessionDao {
     @Insert
     suspend fun insert(session: UsageSession): Long
 
-    @Query("SELECT * FROM usage_session ORDER BY startTime")
-    suspend fun allOnce(): List<UsageSession>
+    @Query("""
+        SELECT * FROM usage_session
+        WHERE startTime >= COALESCE(:afterTime, -9223372036854775808)
+          AND (:afterTime IS NULL OR startTime > :afterTime OR id > :afterId)
+        ORDER BY startTime, id LIMIT :limit
+    """)
+    suspend fun exportPage(afterTime: Long?, afterId: Long, limit: Int): List<UsageSession>
+
+    @Query("SELECT COUNT(*) FROM usage_session WHERE startTime < :before AND endTime < :before")
+    suspend fun cleanupCount(before: Long): Int
+
+    @Query("DELETE FROM usage_session WHERE startTime < :before AND endTime < :before")
+    suspend fun deleteBefore(before: Long): Int
 
     @Query("""
         UPDATE usage_session
@@ -58,10 +69,13 @@ interface UsageSessionDao {
      * 注：entryCount / overrunCount 仍按 startTime 切日（"决策发生在哪天"），
      *     和这条查询语义不同，不要互相替换。
      */
+    // 结束时间索引直接定位近期片段，避免按开始时间扫描从安装至今的所有旧记录。
     @Query("""
-        SELECT * FROM usage_session
-        WHERE startTime < :untilMillis
-          AND (endTime IS NULL OR endTime >= :sinceMillis)
+        SELECT * FROM usage_session INDEXED BY index_usage_session_endTime
+        WHERE endTime >= :sinceMillis AND startTime < :untilMillis
+        UNION ALL
+        SELECT * FROM usage_session INDEXED BY index_usage_session_endTime
+        WHERE endTime IS NULL AND startTime < :untilMillis
         ORDER BY startTime DESC
     """)
     fun sessionsBetween(sinceMillis: Long, untilMillis: Long): Flow<List<UsageSession>>

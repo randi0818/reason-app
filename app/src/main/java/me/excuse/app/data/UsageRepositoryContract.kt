@@ -50,6 +50,9 @@ interface UsageRepositoryContract {
     fun abandonedCountRollingDays(n: Int): Flow<Int>
     fun reasonWallForRollingDays(n: Int): Flow<List<ReasonWallItem>>
 
-    /** 四张表在同一个数据库快照中读取，避免后台服务恰好写入时导出前后对不上。 */
-    suspend fun usageExportSnapshot(): UsageExportSnapshot
+    /** 分批消费同一事务快照；回调只写本机临时文件，不等待外部文档提供方。 */
+    suspend fun exportUsage(consumer: UsageExportConsumer): Int
+    suspend fun historyCountsBefore(beforeMillis: Long): HistoryRecordCounts
+    /** 确认期间数量变化时返回 null，重新预览，不扩大用户刚确认的删除范围。 */
+    suspend fun clearHistoryBefore(beforeMillis: Long, expected: HistoryRecordCounts): HistoryRecordCounts?
 }
