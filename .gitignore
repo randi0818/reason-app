@@ -12,6 +12,9 @@ captures/
 *.aab
 *.keystore
 *.jks
+*.p12
+*.pfx
+*.dpapi
 reason-monitor*.log
 blackbox-farphone/
 .claude/
