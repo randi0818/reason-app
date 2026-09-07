@@ -12,6 +12,7 @@ import me.excuse.app.data.UsageRepository
 import me.excuse.app.data.UsageRepositoryContract
 import me.excuse.app.data.db.AppDatabase
 import me.excuse.app.data.prefs.Prefs
+import me.excuse.app.data.prefs.StartupPreferences
 import me.excuse.app.data.prefs.ThemeMode
 import me.excuse.app.service.SessionCleanupQueue
 
@@ -21,6 +22,8 @@ class App : Application(), AppServices {
     override lateinit var prefs: Prefs
         private set
     override lateinit var themeModeFlow: StateFlow<ThemeMode>
+        private set
+    override lateinit var startupPreferencesFlow: StateFlow<StartupPreferences?>
         private set
     override val sessionCleanupQueue = SessionCleanupQueue(
         scope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
@@ -33,5 +36,6 @@ class App : Application(), AppServices {
         prefs = Prefs(this)
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
         themeModeFlow = prefs.themeMode.stateIn(scope, SharingStarted.Eagerly, ThemeMode.LIGHT)
+        startupPreferencesFlow = prefs.startupPreferences.stateIn(scope, SharingStarted.Eagerly, null)
     }
 }

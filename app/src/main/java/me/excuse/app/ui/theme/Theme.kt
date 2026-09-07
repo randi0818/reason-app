@@ -47,6 +47,11 @@ private val AppShapes = Shapes(
 @Composable
 fun ExcuseTheme(content: @Composable () -> Unit) {
     val mode by LocalContext.current.appServices.themeModeFlow.collectAsState()
+    ExcuseTheme(mode = mode, content = content)
+}
+
+@Composable
+fun ExcuseTheme(mode: ThemeMode, content: @Composable () -> Unit) {
     val useDark = when (mode) {
         ThemeMode.SYSTEM -> isSystemInDarkTheme()
         ThemeMode.LIGHT -> false

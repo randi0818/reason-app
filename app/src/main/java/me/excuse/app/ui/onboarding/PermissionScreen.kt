@@ -47,7 +47,7 @@ import me.excuse.app.ui.theme.SurfaceBg
 
 @Composable
 fun PermissionScreen(
-    autoContinueWhenGranted: Boolean = true,
+    isInitialSetup: Boolean = true,
     onAllGranted: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -92,15 +92,6 @@ fun PermissionScreen(
     val coreOk = usage && overlay && notif
     val isAggressiveRom = PermissionUtils.isVendorRomLikelyAggressive()
 
-    // 首次引导自动放行；从设置进来时必须留在本页，否则用户来不及点自启动设置。
-    LaunchedEffect(coreOk, autoContinueWhenGranted) {
-        if (coreOk && autoContinueWhenGranted) {
-            // 给用户半秒看一眼"已开启"的状态再跳，不至于太突兀
-            delay(400)
-            onAllGranted()
-        }
-    }
-
     Surface(Modifier.fillMaxSize()) {
         Box(
             modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 24.dp),
@@ -115,12 +106,12 @@ fun PermissionScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 Text(
-                    if (autoContinueWhenGranted) "先开几个权限" else "权限与后台设置",
+                    if (isInitialSetup) "先开几个权限" else "权限与后台设置",
                     style = MaterialTheme.typography.titleLarge,
                 )
                 Text(
-                    if (autoContinueWhenGranted) {
-                        "否则这个 app 没法工作。开完会自动回到这里。"
+                    if (isInitialSetup) {
+                        "开好必要权限后，可以继续检查自启动或电池设置，再点底部按钮进入主界面。"
                     } else {
                         "检查运行所需权限，并按需调整自启动或电池策略。"
                     },
@@ -130,13 +121,13 @@ fun PermissionScreen(
 
                 PermissionCard(
                     title = "使用情况访问权限",
-                    desc = "用来知道你正在用哪个 app，否则没法拦截。",
+                    desc = "用来知道你正在用哪个 app、什么时候切换。看不到屏幕内容、聊天和输入。",
                     granted = usage,
                     onGo = { PermissionUtils.openUsageAccessSettings(context) }
                 )
                 PermissionCard(
                     title = "悬浮窗权限",
-                    desc = "用来盖在被监控 app 上弹问题。",
+                    desc = "用来盖在被监控 app 上弹问题。这个窗禁止截屏录屏，理由不会被录进去。",
                     granted = overlay,
                     onGo = { PermissionUtils.openOverlaySettings(context) }
                 )
@@ -151,7 +142,7 @@ fun PermissionScreen(
                         desc = if (notificationAction == NotificationPermissionAction.OPEN_SETTINGS) {
                             "系统已不再弹出权限请求，请在应用通知设置中开启。"
                         } else {
-                            "前台服务需要常驻通知。"
+                            "前台服务需要一个常驻通知。它不显示你正在用哪个 app，锁屏上也看不出来。"
                         },
                         granted = notif,
                         actionLabel = when (notificationAction) {
@@ -215,7 +206,7 @@ fun PermissionScreen(
                     Text(
                         when {
                             !coreOk -> "请先把必要权限开启"
-                            autoContinueWhenGranted -> "全部开好了，进入主界面"
+                            isInitialSetup -> "全部开好了，进入主界面"
                             else -> "完成，返回主界面"
                         }
                     )

@@ -24,7 +24,13 @@ class Prefs(private val context: Context) {
     private val KEY_ONBOARDED = booleanPreferencesKey("onboarded")
     private val KEY_THEME_MODE = stringPreferencesKey("theme_mode")
 
-    val onboarded: Flow<Boolean> = context.dataStore.data.map { it[KEY_ONBOARDED] ?: false }
+    // 首屏的去向和配色必须来自同一次读取，不能把真实标志与默认浅色拼成一帧。
+    val startupPreferences: Flow<StartupPreferences> = context.dataStore.data.map {
+        StartupPreferences(
+            onboarded = it[KEY_ONBOARDED] ?: false,
+            themeMode = ThemeMode.fromKey(it[KEY_THEME_MODE]),
+        )
+    }
 
     suspend fun setOnboarded(value: Boolean) {
         context.dataStore.edit { it[KEY_ONBOARDED] = value }
