@@ -182,7 +182,7 @@ fun UsageGuideScreen(onBack: () -> Unit) {
 
                 // 没有分隔线可以把页脚分出来，改用一段明显大于行距的留白。
                 Text(
-                    text = "v${BuildConfig.VERSION_NAME} — 自用阶段，慢慢用",
+                    text = "v${BuildConfig.VERSION_NAME}",
                     color = Muted,
                     modifier = Modifier.padding(top = 16.dp),
                     style = TextStyle(
