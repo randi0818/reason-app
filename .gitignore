@@ -20,3 +20,5 @@ blackbox-farphone/
 .claude/
 .codex-gradle-home/
 .codex-sdk-staging/
+__pycache__/
+.codex-remote-attachments/
