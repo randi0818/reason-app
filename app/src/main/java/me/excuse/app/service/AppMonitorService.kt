@@ -77,7 +77,15 @@ class AppMonitorService : LifecycleService() {
     private var screenReceiver: BroadcastReceiver? = null
 
     private val stateMachine = InterceptStateMachine()
-    private val foregroundInterpreter = ForegroundEventInterpreter(PAUSE_REENTRY_GAP_MS)
+    private val homePackage by lazy {
+        packageManager.resolveActivity(
+            Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME), 0,
+        )?.activityInfo?.packageName
+    }
+    private val foregroundInterpreter = ForegroundEventInterpreter(
+        PAUSE_REENTRY_GAP_MS,
+        isHomePackage = { it == homePackage },
+    )
     private val postHomeEventGuard = PostHomeEventGuard(POST_HOME_USAGE_STATS_SUPPRESS_MS)
     private var lastQueryTime = 0L
     private var lastUsageStatsCheckAt = 0L

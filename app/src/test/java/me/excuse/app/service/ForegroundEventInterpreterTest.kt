@@ -286,6 +286,123 @@ class ForegroundEventInterpreterTest {
         assertEquals(2_000L, fg.lastForegroundChangeAt)
     }
 
+    @Test
+    fun recentsStoppingRestoresTargetThatNeverPaused() {
+        val fg = withHome()
+        fg.seed(resumed(1_000L, appA, "MainActivity"))
+        assertEquals(listOf(entry(home, 2_000L)), fg.process(resumed(2_000L, home, "Home"), 2_000L))
+        fg.process(paused(3_000L, home, "Home"), 3_000L)
+        assertEquals(listOf(entry(appA, 3_100L)), fg.process(stopped(3_100L, home, "Home"), 3_100L))
+        assertEquals("MainActivity", fg.stickyClassName)
+        assertEquals(3_100L, fg.lastForegroundChangeAt)
+        assertEquals(emptyList<ForegroundChange>(), fg.process(stopped(3_200L, home, "Home"), 3_200L))
+    }
+
+    @Test
+    fun recentsReturnSurvivesHomePauseAgingButRequiresHomeStop() {
+        val fg = withHome()
+        fg.seed(resumed(1_000L, appA, "MainActivity"))
+        fg.process(resumed(2_000L, home, "Home"), 2_000L)
+        fg.process(paused(3_000L, home, "Home"), 3_000L)
+        assertEquals(listOf(ForegroundChange(null, 3_200L)), fg.agePendingPause(3_201L))
+        assertEquals(null, fg.stickyPackageName)
+        assertEquals(listOf(entry(appA, 3_400L)), fg.process(stopped(3_400L, home, "Home"), 3_400L))
+    }
+
+    @Test
+    fun normalHomeLeaveNeverRestoresPausedTarget() {
+        val fg = withHome()
+        fg.seed(resumed(1_000L, appA, "MainActivity"))
+        fg.process(paused(1_900L, appA, "MainActivity"), 1_900L)
+        fg.process(resumed(2_000L, home, "Home"), 2_000L)
+        assertEquals(listOf(ForegroundChange(null, 3_000L)), fg.process(stopped(3_000L, home, "Home"), 3_000L))
+    }
+
+    @Test
+    fun delayedTargetPauseInvalidatesRecentsCandidateEvenBehindGlobalWatermark() {
+        val fg = withHome()
+        fg.seed(resumed(1_000L, appA, "MainActivity"))
+        fg.process(resumed(2_000L, home, "Home"), 2_000L)
+        fg.process(paused(1_900L, appA, "MainActivity"), 2_100L)
+        assertEquals(listOf(ForegroundChange(null, 3_000L)), fg.process(stopped(3_000L, home, "Home"), 3_000L))
+    }
+
+    @Test
+    fun stoppedTargetOrAnotherAppPreventsRecentsRestoration() {
+        for (event in listOf(stopped(2_100L, appA, "MainActivity"), resumed(2_100L, appB, "Other"))) {
+            val fg = withHome()
+            fg.seed(resumed(1_000L, appA, "MainActivity"))
+            fg.process(resumed(2_000L, home, "Home"), 2_000L)
+            fg.process(event, 2_100L)
+            val changes = fg.process(stopped(3_000L, home, "Home"), 3_000L)
+            assertTrue(changes.none { it.packageName == appA })
+            assertTrue(fg.stickyPackageName != appA)
+        }
+    }
+
+    @Test
+    fun resetForceForegroundAndSeedDiscardRecentsCandidates() {
+        for (reset in listOf<(ForegroundEventInterpreter) -> Unit>(
+            { it.reset() }, { it.forceForeground(null) }, { it.seed(resumed(2_100L, home, "Home")) },
+        )) {
+            val fg = withHome()
+            fg.seed(resumed(1_000L, appA, "MainActivity"))
+            fg.process(resumed(2_000L, home, "Home"), 2_000L)
+            reset(fg)
+            val changes = fg.process(stopped(3_000L, home, "Home"), 3_000L)
+            assertTrue(changes.none { it.packageName == appA })
+        }
+    }
+
+    @Test
+    fun packageOnlyFallbackDoesNotInventRecentsReturn() {
+        val fg = withHome()
+        fg.forceForeground(appA, observedAt = 1_000L)
+        fg.process(resumed(2_000L, home, "Home"), 2_000L)
+        assertEquals(listOf(ForegroundChange(null, 3_000L)), fg.process(stopped(3_000L, home, "Home"), 3_000L))
+    }
+
+    @Test
+    fun recentsReturnResumesExtendedSessionAndPreservesLeaveDeadline() {
+        for (returnedAt in listOf(3_000L, 13_000L)) {
+            val fg = withHome()
+            val sm = InterceptStateMachine()
+            fg.seed(resumed(1_000L, appA, "MainActivity"))
+            sm.tick(appA, monitored, 1_000L)
+            sm.onPromptConfirmed(appA, 1, 1_100L)
+            sm.tick(appA, monitored, 1_200L, entryEdge = true)
+            sm.onSessionTimeElapsed(appA, 1_500L)
+            sm.onTimeUpExtended(appA, 5, 1_600L)
+            fg.process(resumed(2_000L, home, "Home"), 2_000L).forEach {
+                sm.tick(it.packageName, monitored, it.at, it.isEntryEdge)
+            }
+            val effects = fg.process(stopped(returnedAt, home, "Home"), returnedAt).flatMap {
+                sm.tick(it.packageName, monitored, it.at, it.isEntryEdge)
+            }
+            if (returnedAt == 3_000L) {
+                assertTrue(sm.state is State.InSession)
+                assertEquals(1, (sm.state as State.InSession).extensionCount)
+                assertEquals(6, (sm.state as State.InSession).plannedMinutes)
+                assertTrue(Effect.CancelSessionLeave in effects)
+                assertTrue(effects.none { it is Effect.FinishSession || it is Effect.ShowPrompt })
+            } else {
+                assertTrue(sm.state is State.Prompting)
+                assertTrue(effects.any { it is Effect.FinishSession && it.endedAt == 2_000L })
+                assertTrue(Effect.ShowPrompt(appA) in effects)
+            }
+        }
+    }
+
+    @Test
+    fun recentsCandidateDoesNotSurviveClockRollback() {
+        val fg = withHome()
+        fg.seed(resumed(1_000L, appA, "MainActivity"))
+        fg.process(resumed(2_000L, home, "Home"), 2_000L)
+        assertEquals(listOf(ForegroundChange(null, 1_500L)), fg.process(stopped(1_500L, home, "Home"), 1_500L))
+    }
+
+    private val home = "com.example.launcher"
+    private fun withHome() = ForegroundEventInterpreter(200L, isHomePackage = { it == home })
     private fun fresh() = ForegroundEventInterpreter(pauseReentryGapMs = 200L)
 
     private fun resumed(at: Long, pkg: String, cls: String?) =

@@ -10,6 +10,7 @@ package me.excuse.app.service
 internal class ForegroundEventInterpreter(
     private val pauseReentryGapMs: Long,
     private val delayedStoppedGraceMs: Long = 1_000L,
+    private val isHomePackage: (String) -> Boolean = { false },
 ) {
 
     enum class EventType {
@@ -43,6 +44,14 @@ internal class ForegroundEventInterpreter(
         val until: Long,
     )
 
+    private data class RecentsReturn(
+        val pkg: String,
+        val cls: String,
+        val resumedAt: Long,
+        val homePkg: String,
+        val homeCls: String?,
+    )
+
     var stickyPackageName: String? = null
         private set
 
@@ -55,6 +64,7 @@ internal class ForegroundEventInterpreter(
 
     private var pendingPause: PendingPause? = null
     private var suppressedStop: SuppressedStop? = null
+    private var recentsReturn: RecentsReturn? = null
 
     fun reset() {
         stickyPackageName = null
@@ -62,9 +72,12 @@ internal class ForegroundEventInterpreter(
         lastForegroundChangeAt = null
         pendingPause = null
         suppressedStop = null
+        recentsReturn = null
     }
 
     fun seed(event: Event) {
+        // 冷启动回放不据旧记录推断 Recents 底下的窗口仍然可见。
+        recentsReturn = null
         when (event.eventType) {
             EventType.Resumed -> {
                 stickyPackageName = event.packageName
@@ -100,9 +113,19 @@ internal class ForegroundEventInterpreter(
         }
         pendingPause = null
         suppressedStop = null
+        recentsReturn = null
     }
 
     fun process(event: Event, now: Long): List<ForegroundChange> {
+        if (lastForegroundChangeAt?.let { now < it } == true) recentsReturn = null
+        recentsReturn?.let { previous ->
+            // 目标的 PAUSED 可能比 launcher RESUMED 晚到；即使落后于全局水位，
+            // 它仍能否定“目标一直处于 resumed”的局部证据。
+            if (event.eventType != EventType.Resumed &&
+                event.packageName == previous.pkg && event.className == previous.cls &&
+                event.timestamp >= previous.resumedAt
+            ) recentsReturn = null
+        }
         val evidenceWatermark = lastForegroundChangeAt
         if (evidenceWatermark != null &&
             event.timestamp < evidenceWatermark &&
@@ -145,6 +168,27 @@ internal class ForegroundEventInterpreter(
     private fun handleResumed(event: Event, now: Long): List<ForegroundChange> {
         val changes = ArrayList<ForegroundChange>(2)
         var suppressEntryEdge = false
+
+        val previousPackage = stickyPackageName
+        val previousClass = stickyClassName
+        val previousEvidence = lastForegroundChangeAt
+        // Nothing 的 Recents 可只 resume launcher，底下的 app 从未 pause，点回卡片
+        // 也就没有新的 app RESUMED。仅为这个有完整生命周期证据的 Home 覆盖保留候选；
+        // 普通应用切换、聚合 UsageStats 猜测和已收到 PAUSED 的 Home 离开不适用。
+        if (isHomePackage(event.packageName) &&
+            previousPackage != null && previousClass != null && previousEvidence != null &&
+            previousPackage != event.packageName && !isHomePackage(previousPackage) &&
+            pendingPause == null
+        ) {
+            recentsReturn = RecentsReturn(
+                previousPackage, previousClass, previousEvidence,
+                event.packageName, event.className,
+            )
+        } else if (event.packageName != recentsReturn?.homePkg ||
+            event.className != recentsReturn?.homeCls
+        ) {
+            recentsReturn = null
+        }
 
         pendingPause?.let { pp ->
             val gap = event.timestamp - pp.at
@@ -215,6 +259,20 @@ internal class ForegroundEventInterpreter(
     }
 
     private fun handleStopped(event: Event, now: Long): List<ForegroundChange> {
+        val previous = recentsReturn
+        if (previous != null && event.packageName == previous.homePkg &&
+            event.className == previous.homeCls &&
+            (stickyPackageName == previous.homePkg || stickyPackageName == null)
+        ) {
+            // 要等 launcher 确实 STOPPED；仅 PAUSED 或仍停在桌面不能恢复下层 app。
+            recentsReturn = null
+            stickyPackageName = previous.pkg
+            stickyClassName = previous.cls
+            pendingPause = null
+            suppressedStop = null
+            recordEvidence(event.timestamp, now)
+            return listOf(ForegroundChange(previous.pkg, eventTime(event, now), isEntryEdge = true))
+        }
         // Match both package and class. Old Activity STOPPED events can arrive after
         // in-app navigation has already resumed a new Activity in the same package.
         if (shouldSuppressStopped(event)) return emptyList()
