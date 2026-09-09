@@ -83,7 +83,8 @@ class RecentsCancelFlowTest {
         assertFalse(shouldApplyUsageStatsForeground(
             state = machine.state,
             stickyPackage = foreground.stickyPackageName,
-            lastForegroundChangeAt = foreground.lastForegroundChangeAt,
+            lastUsageEvidenceAt = foreground.lastUsageEvidenceAt,
+            eventsQueriedThrough = 1_251L,
             candidate = UsageStatsForeground(target, 1_240L),
             monitored = monitored,
         ))
@@ -103,7 +104,8 @@ class RecentsCancelFlowTest {
         assertTrue(shouldApplyUsageStatsForeground(
             state = State.Background(null),
             stickyPackage = null,
-            lastForegroundChangeAt = 1_500L,
+            lastUsageEvidenceAt = 1_500L,
+            eventsQueriedThrough = 1_502L,
             candidate = UsageStatsForeground(target, 1_501L),
             monitored = monitored,
         ))

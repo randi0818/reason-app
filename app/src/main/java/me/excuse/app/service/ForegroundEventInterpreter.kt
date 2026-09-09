@@ -58,8 +58,13 @@ internal class ForegroundEventInterpreter(
     var stickyClassName: String? = null
         private set
 
-    /** 最近一次已采纳的前台进入/离开证据时间；用于拒绝更旧的聚合 UsageStats。 */
+    /** 最近一次已采纳的前台进入/离开证据时间；拒绝更旧的生命周期切换。 */
     var lastForegroundChangeAt: Long? = null
+        private set
+
+    // 非 sticky Activity 的 PAUSED/STOPPED 也会刷新 lastTimeUsed（Samsung 手势 Home）。
+    // 单独约束 aggregate，不能因此丢弃晚到、但仍晚于已知前台的真实 RESUMED。
+    var lastUsageEvidenceAt: Long? = null
         private set
 
     private var pendingPause: PendingPause? = null
@@ -70,12 +75,14 @@ internal class ForegroundEventInterpreter(
         stickyPackageName = null
         stickyClassName = null
         lastForegroundChangeAt = null
+        lastUsageEvidenceAt = null
         pendingPause = null
         suppressedStop = null
         recentsReturn = null
     }
 
     fun seed(event: Event) {
+        recordUsageEvidence(event.timestamp, event.timestamp)
         // 冷启动回放不据旧记录推断 Recents 底下的窗口仍然可见。
         recentsReturn = null
         when (event.eventType) {
@@ -108,8 +115,10 @@ internal class ForegroundEventInterpreter(
         stickyClassName = className
         if (observedAt == null) {
             lastForegroundChangeAt = null
+            lastUsageEvidenceAt = null
         } else {
             recordEvidence(observedAt, observedAt)
+            recordUsageEvidence(observedAt, observedAt)
         }
         pendingPause = null
         suppressedStop = null
@@ -117,6 +126,7 @@ internal class ForegroundEventInterpreter(
     }
 
     fun process(event: Event, now: Long): List<ForegroundChange> {
+        recordUsageEvidence(event.timestamp, now)
         if (lastForegroundChangeAt?.let { now < it } == true) recentsReturn = null
         recentsReturn?.let { previous ->
             // 目标的 PAUSED 可能比 launcher RESUMED 晚到；即使落后于全局水位，
@@ -163,6 +173,7 @@ internal class ForegroundEventInterpreter(
 
     fun debugState(): String =
         "sticky=($stickyPackageName, $stickyClassName) changedAt=$lastForegroundChangeAt " +
+            "usageEvidenceAt=$lastUsageEvidenceAt " +
             "pp=$pendingPause suppressedStop=$suppressedStop"
 
     private fun handleResumed(event: Event, now: Long): List<ForegroundChange> {
@@ -307,14 +318,20 @@ internal class ForegroundEventInterpreter(
     }
 
     private fun recordEvidence(timestamp: Long, observedNow: Long) {
-        val previous = lastForegroundChangeAt
-        lastForegroundChangeAt = when {
+        lastForegroundChangeAt = advanceEvidence(lastForegroundChangeAt, timestamp, observedNow)
+    }
+
+    private fun recordUsageEvidence(timestamp: Long, observedNow: Long) {
+        lastUsageEvidenceAt = advanceEvidence(lastUsageEvidenceAt, timestamp, observedNow)
+    }
+
+    private fun advanceEvidence(previous: Long?, timestamp: Long, observedNow: Long): Long =
+        when {
             previous == null -> timestamp
             // 系统墙钟真的回拨时允许重新建立水位；普通迟到事件不能把水位拉低。
             observedNow < previous -> timestamp
             else -> maxOf(previous, timestamp)
         }
-    }
 
     private fun eventTime(event: Event, now: Long): Long = event.timestamp.coerceAtLeast(now)
 }

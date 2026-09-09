@@ -86,6 +86,22 @@ object PermissionUtils {
 
     enum class AutostartResult { OPENED_VENDOR, OPENED_BATTERY, OPENED_APP_DETAILS, FAILED }
 
+    fun isXiaomiRom(): Boolean {
+        val manufacturer = Build.MANUFACTURER.lowercase()
+        return manufacturer.contains("xiaomi") || manufacturer.contains("redmi")
+    }
+
+    fun openAppDetailsSettings(context: Context): Boolean = try {
+        val intent = Intent(
+            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+            Uri.parse("package:${context.packageName}"),
+        ).apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK }
+        context.startActivity(intent)
+        true
+    } catch (_: Exception) {
+        false
+    }
+
     /**
      * 各厂商 ROM 的自启动 / 后台保活页路径。
      * - 国产 ROM (小米/华为/OPPO/vivo/三星): 跳厂商专门的自启动管理页
@@ -117,6 +133,13 @@ object PermissionUtils {
             }
         }
 
+        // 小米的自启动与省电策略是两项设置，通用电池优化页不能代替自启动入口。
+        if (isXiaomiRom()) {
+            return if (openAppDetailsSettings(context)) {
+                AutostartResult.OPENED_APP_DETAILS
+            } else AutostartResult.FAILED
+        }
+
         // 原生 Android 没有"自启动"页，跳"电池优化白名单"——所有手机都有
         try {
             val battery = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
@@ -128,13 +151,9 @@ object PermissionUtils {
         } catch (_: Exception) {}
 
         // 最后兜底：应用详情页
-        try {
-            val fallback = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}"))
-            fallback.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-            context.startActivity(fallback)
-            return AutostartResult.OPENED_APP_DETAILS
-        } catch (_: Exception) {}
-        return AutostartResult.FAILED
+        return if (openAppDetailsSettings(context)) {
+            AutostartResult.OPENED_APP_DETAILS
+        } else AutostartResult.FAILED
     }
 
     /** 用机型判断是否为国产 ROM。原生 ROM 上"自启动"基本无关紧要，可以淡化提示。 */

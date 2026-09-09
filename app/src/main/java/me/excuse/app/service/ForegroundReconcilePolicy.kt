@@ -14,16 +14,20 @@ internal data class UsageStatsForeground(
 internal fun shouldApplyUsageStatsForeground(
     state: InterceptStateMachine.State,
     stickyPackage: String?,
-    lastForegroundChangeAt: Long?,
+    lastUsageEvidenceAt: Long?,
+    eventsQueriedThrough: Long,
     candidate: UsageStatsForeground?,
     monitored: Set<String>,
 ): Boolean {
     candidate ?: return false
+    // 两次 binder 查询之间新产生的 aggregate，等既有的下一轮事件查询覆盖后再仲裁。
+    // 否则 STOPPED 可能先在 stats 可见、尚未在事件流出现，仍会被误认为重新进入。
+    if (candidate.lastTimeUsed >= eventsQueriedThrough) return false
     if (state is InterceptStateMachine.State.Prompting ||
         state is InterceptStateMachine.State.TimeUp
     ) return false
     if (candidate.packageName == stickyPackage) return false
-    if (lastForegroundChangeAt != null && candidate.lastTimeUsed <= lastForegroundChangeAt) {
+    if (lastUsageEvidenceAt != null && candidate.lastTimeUsed <= lastUsageEvidenceAt) {
         return false
     }
 

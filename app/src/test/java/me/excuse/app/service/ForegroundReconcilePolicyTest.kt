@@ -17,7 +17,8 @@ class ForegroundReconcilePolicyTest {
             shouldApplyUsageStatsForeground(
                 state = State.Unknown,
                 stickyPackage = null,
-                lastForegroundChangeAt = null,
+                lastUsageEvidenceAt = null,
+                eventsQueriedThrough = 1_000_000L,
                 candidate = UsageStatsForeground(appA, lastTimeUsed = 1_000L),
                 monitored = monitored,
             )
@@ -36,7 +37,8 @@ class ForegroundReconcilePolicyTest {
                     leftAt = 2_200L,
                 ),
                 stickyPackage = null,
-                lastForegroundChangeAt = 2_000L,
+                lastUsageEvidenceAt = 2_000L,
+                eventsQueriedThrough = 1_000_000L,
                 candidate = UsageStatsForeground(appA, lastTimeUsed = 1_000L),
                 monitored = monitored,
             )
@@ -55,7 +57,8 @@ class ForegroundReconcilePolicyTest {
                     leftAt = 2_200L,
                 ),
                 stickyPackage = null,
-                lastForegroundChangeAt = 2_000L,
+                lastUsageEvidenceAt = 2_000L,
+                eventsQueriedThrough = 1_000_000L,
                 candidate = UsageStatsForeground(appA, lastTimeUsed = 2_000L),
                 monitored = monitored,
             )
@@ -74,7 +77,8 @@ class ForegroundReconcilePolicyTest {
                     leftAt = 2_200L,
                 ),
                 stickyPackage = null,
-                lastForegroundChangeAt = 2_000L,
+                lastUsageEvidenceAt = 2_000L,
+                eventsQueriedThrough = 1_000_000L,
                 candidate = UsageStatsForeground(appA, lastTimeUsed = 2_300L),
                 monitored = monitored,
             )
@@ -93,7 +97,8 @@ class ForegroundReconcilePolicyTest {
                     leftAt = 2_200L,
                 ),
                 stickyPackage = null,
-                lastForegroundChangeAt = 2_000L,
+                lastUsageEvidenceAt = 2_000L,
+                eventsQueriedThrough = 1_000_000L,
                 candidate = UsageStatsForeground(appA, lastTimeUsed = 2_100L),
                 monitored = monitored,
             )
@@ -112,7 +117,8 @@ class ForegroundReconcilePolicyTest {
                     leftAt = 2_200L,
                 ),
                 stickyPackage = launcher,
-                lastForegroundChangeAt = 2_300L,
+                lastUsageEvidenceAt = 2_300L,
+                eventsQueriedThrough = 1_000_000L,
                 candidate = UsageStatsForeground(appA, lastTimeUsed = 2_400L),
                 monitored = monitored,
             )
@@ -125,7 +131,8 @@ class ForegroundReconcilePolicyTest {
             shouldApplyUsageStatsForeground(
                 state = State.Background(launcher),
                 stickyPackage = launcher,
-                lastForegroundChangeAt = 3_000L,
+                lastUsageEvidenceAt = 3_000L,
+                eventsQueriedThrough = 1_000_000L,
                 candidate = UsageStatsForeground(appA, lastTimeUsed = 2_900L),
                 monitored = monitored,
             )
@@ -138,7 +145,8 @@ class ForegroundReconcilePolicyTest {
             shouldApplyUsageStatsForeground(
                 state = State.Background(launcher),
                 stickyPackage = launcher,
-                lastForegroundChangeAt = 3_000L,
+                lastUsageEvidenceAt = 3_000L,
+                eventsQueriedThrough = 1_000_000L,
                 candidate = UsageStatsForeground(appA, lastTimeUsed = 3_100L),
                 monitored = monitored,
             )
@@ -151,7 +159,8 @@ class ForegroundReconcilePolicyTest {
             shouldApplyUsageStatsForeground(
                 state = State.Prompting(appA, shownAt = 1_000L),
                 stickyPackage = launcher,
-                lastForegroundChangeAt = 2_000L,
+                lastUsageEvidenceAt = 2_000L,
+                eventsQueriedThrough = 1_000_000L,
                 candidate = UsageStatsForeground(appA, lastTimeUsed = 2_100L),
                 monitored = monitored,
             )
@@ -170,7 +179,8 @@ class ForegroundReconcilePolicyTest {
                     initialEntryPending = true,
                 ),
                 stickyPackage = null,
-                lastForegroundChangeAt = 2_000L,
+                lastUsageEvidenceAt = 2_000L,
+                eventsQueriedThrough = 1_000_000L,
                 candidate = UsageStatsForeground(appB, lastTimeUsed = 2_100L),
                 monitored = setOf(appA, appB),
             )
@@ -189,7 +199,8 @@ class ForegroundReconcilePolicyTest {
                     initialEntryPending = true,
                 ),
                 stickyPackage = launcher,
-                lastForegroundChangeAt = 2_000L,
+                lastUsageEvidenceAt = 2_000L,
+                eventsQueriedThrough = 1_000_000L,
                 candidate = UsageStatsForeground(appA, lastTimeUsed = 2_100L),
                 monitored = monitored,
             )
@@ -208,7 +219,8 @@ class ForegroundReconcilePolicyTest {
                     initialEntryPending = false,
                 ),
                 stickyPackage = launcher,
-                lastForegroundChangeAt = 2_000L,
+                lastUsageEvidenceAt = 2_000L,
+                eventsQueriedThrough = 1_000_000L,
                 candidate = UsageStatsForeground(appA, lastTimeUsed = 2_100L),
                 monitored = monitored,
             )
@@ -221,7 +233,8 @@ class ForegroundReconcilePolicyTest {
             shouldApplyUsageStatsForeground(
                 state = State.Background(launcher),
                 stickyPackage = launcher,
-                lastForegroundChangeAt = 3_000L,
+                lastUsageEvidenceAt = 3_000L,
+                eventsQueriedThrough = 1_000_000L,
                 candidate = UsageStatsForeground("com.example.other", lastTimeUsed = 3_100L),
                 monitored = monitored,
             )
@@ -239,7 +252,8 @@ class ForegroundReconcilePolicyTest {
                     extensionCount = 0,
                 ),
                 stickyPackage = null,
-                lastForegroundChangeAt = 301_000L,
+                lastUsageEvidenceAt = 301_000L,
+                eventsQueriedThrough = 1_000_000L,
                 candidate = UsageStatsForeground(appB, lastTimeUsed = 301_100L),
                 monitored = setOf(appA, appB),
             )

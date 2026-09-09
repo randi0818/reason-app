@@ -168,7 +168,8 @@ class PromptReturnPolicyTest {
             shouldApplyUsageStatsForeground(
                 state = stateMachine.state,
                 stickyPackage = launcher,
-                lastForegroundChangeAt = 1_100L,
+                lastUsageEvidenceAt = 1_100L,
+                eventsQueriedThrough = 1_400L,
                 candidate = missedResume,
                 monitored = monitored,
             )

@@ -8,7 +8,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -126,7 +125,16 @@ class MainActivity : ComponentActivity() {
                         },
                     )
                     StartupPage.MAIN -> {
-                        LaunchedEffect(Unit) { AppMonitorService.start(ctx) }
+                        DisposableEffect(lifecycleOwner) {
+                            // 后台撤权会停服；若后台又恢复权限，MAIN 可能从未离开组合。
+                            // 每次回到前台都尝试恢复，start 自行复核权限且不重置已有 session。
+                            val observer = LifecycleEventObserver { _, event ->
+                                if (event == Lifecycle.Event.ON_RESUME) AppMonitorService.start(ctx)
+                            }
+                            // 已处于 resumed 时，注册会补发 ON_RESUME，也覆盖首次读完偏好的进入。
+                            lifecycleOwner.lifecycle.addObserver(observer)
+                            onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+                        }
                         AppNav(onRedoPermissions = { redoMode = true })
                     }
                 }

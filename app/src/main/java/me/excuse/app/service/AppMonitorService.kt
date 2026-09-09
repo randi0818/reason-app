@@ -487,7 +487,8 @@ class AppMonitorService : LifecycleService() {
         val shouldApply = shouldApplyUsageStatsForeground(
             state = currentState,
             stickyPackage = currentSticky,
-            lastForegroundChangeAt = foregroundInterpreter.lastForegroundChangeAt,
+            lastUsageEvidenceAt = foregroundInterpreter.lastUsageEvidenceAt,
+            eventsQueriedThrough = lastQueryTime,
             candidate = candidate,
             monitored = monitoredCache,
         )
