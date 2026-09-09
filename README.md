@@ -30,7 +30,7 @@ Android 10+ · 完全离线 · MIT License
 
 ## 安装与开始
 
-当前为 `0.1.3` 早期版本，支持 Android 10 及以上。前往 [GitHub Releases](https://github.com/randi0818/reason-app/releases/latest) 下载正式签名的 `reason-app-0.1.3.apk`，同页提供 `SHA256SUMS.txt` 校验文件。自行构建方法见下方「本地构建」。
+当前可下载的早期版本为 `0.1.2`，支持 Android 10 及以上；`0.1.3` 暂缓发布，待最终安装包完成真机验证。前往 [GitHub Releases](https://github.com/randi0818/reason-app/releases/latest) 下载正式签名的 `reason-app-0.1.2.apk`，同页提供 `SHA256SUMS.txt` 校验文件。自行构建方法见下方「本地构建」。
 
 正式版与 debug 测试版可同时安装，名单和记录各自独立，不会自动迁移。后续正式版可覆盖安装升级，请保留应用数据。
 
