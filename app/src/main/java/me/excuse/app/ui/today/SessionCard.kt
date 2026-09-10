@@ -37,7 +37,7 @@ fun SessionCard(
 ) {
     val now = System.currentTimeMillis()
     val end = displayEnd ?: now
-    val durationMin = ((end - displayStart) / 60_000L).toInt().coerceAtLeast(0)
+    val duration = minuteDisplayValue(end - displayStart)
 
     Card(
         colors = CardDefaults.cardColors(containerColor = SurfaceBg),
@@ -55,7 +55,7 @@ fun SessionCard(
                 Spacer(Modifier.width(8.dp))
                 Text("·", color = Muted)
                 Spacer(Modifier.width(8.dp))
-                Text("${durationMin}min", color = Ink, style = MaterialTheme.typography.bodyMedium)
+                Text("${duration}min", color = Ink, style = MaterialTheme.typography.bodyMedium)
                 if (session.overran) {
                     Spacer(Modifier.width(8.dp))
                     Text("超时", color = Danger, style = MaterialTheme.typography.bodyMedium)

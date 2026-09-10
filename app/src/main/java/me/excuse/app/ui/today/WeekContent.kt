@@ -94,12 +94,12 @@ fun WeekContent(onDayClick: (LocalDate) -> Unit) {
         map
     }
 
-    // 全周总分钟 —— 先累计本周窗口内的全部毫秒，再统一换算分钟。
+    // 全周总时长 —— 先累计本周窗口内的全部毫秒，再统一换算显示值。
     // 多条不足一分钟的 session 也应在合计达到一分钟后显示出来。
-    val totalMin = remember(sessions, nowMillis, days) {
+    val totalMillis = remember(sessions, nowMillis, days) {
         val windowStartMillis = TimeUtil.startOfDayMillis(days.first())
         val windowEndMillis = TimeUtil.startOfDayMillis(days.last().plusDays(1))
-        usageMinutesInWindow(
+        usageDurationMillisInWindow(
             sessions = sessions,
             openSessionEndMillis = nowMillis,
             windowStartMillis = windowStartMillis,
@@ -115,7 +115,7 @@ fun WeekContent(onDayClick: (LocalDate) -> Unit) {
     ) {
         item(key = "week-summary", contentType = "summary") {
             Column {
-                WeekStatsRow(totalMin = totalMin, entries = entries, overruns = overruns)
+                WeekStatsRow(duration = minuteDisplayValue(totalMillis), entries = entries, overruns = overruns)
 
                 Spacer(Modifier.height(16.dp))
 
@@ -198,23 +198,23 @@ private fun HourScaleColumn(
 }
 
 @Composable
-private fun WeekStatsRow(totalMin: Int, entries: Int, overruns: Int) {
+private fun WeekStatsRow(duration: String, entries: Int, overruns: Int) {
     Row(
         Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(32.dp)
     ) {
-        WeekStatItem(label = "时长", value = totalMin, unit = "min")
-        WeekStatItem(label = "次数", value = entries, unit = "次")
-        WeekStatItem(label = "超时", value = overruns, unit = "次")
+        WeekStatItem(label = "时长", value = duration, unit = "min")
+        WeekStatItem(label = "次数", value = entries.toString(), unit = "次")
+        WeekStatItem(label = "超时", value = overruns.toString(), unit = "次")
     }
 }
 
 @Composable
-private fun WeekStatItem(label: String, value: Int, unit: String) {
+private fun WeekStatItem(label: String, value: String, unit: String) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(label, color = Muted, style = TextStyle(fontSize = 12.sp, letterSpacing = 0.5.sp))
         Row(verticalAlignment = Alignment.Bottom) {
-            Text("$value", color = Ink, style = TextStyle(fontSize = 36.sp, fontWeight = FontWeight.Light, lineHeight = 36.sp))
+            Text(value, color = Ink, style = TextStyle(fontSize = 36.sp, fontWeight = FontWeight.Light, lineHeight = 36.sp))
             Spacer(Modifier.width(4.dp))
             Text(unit, color = Muted, style = TextStyle(fontSize = 12.sp), modifier = Modifier.padding(bottom = 6.dp))
         }

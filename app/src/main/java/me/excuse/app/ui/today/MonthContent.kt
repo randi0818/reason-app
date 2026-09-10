@@ -91,8 +91,8 @@ fun MonthContent(onDayClick: (LocalDate) -> Unit) {
         map
     }
 
-    val totalMin = remember(sessions, nowMillis, days) {
-        usageMinutesInWindow(
+    val totalMillis = remember(sessions, nowMillis, days) {
+        usageDurationMillisInWindow(
             sessions = sessions,
             openSessionEndMillis = nowMillis,
             windowStartMillis = TimeUtil.startOfDayMillis(days.first()),
@@ -108,7 +108,7 @@ fun MonthContent(onDayClick: (LocalDate) -> Unit) {
     ) {
         item(key = "month-summary", contentType = "summary") {
             Column {
-                MonthStatsRow(totalMin = totalMin, entries = entries, overruns = overruns)
+                MonthStatsRow(duration = minuteDisplayValue(totalMillis), entries = entries, overruns = overruns)
 
                 Spacer(Modifier.height(16.dp))
 
@@ -154,23 +154,23 @@ fun MonthContent(onDayClick: (LocalDate) -> Unit) {
 }
 
 @Composable
-private fun MonthStatsRow(totalMin: Int, entries: Int, overruns: Int) {
+private fun MonthStatsRow(duration: String, entries: Int, overruns: Int) {
     Row(
         Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(32.dp)
     ) {
-        MonthStatItem(label = "时长", value = totalMin, unit = "min")
-        MonthStatItem(label = "次数", value = entries, unit = "次")
-        MonthStatItem(label = "超时", value = overruns, unit = "次")
+        MonthStatItem(label = "时长", value = duration, unit = "min")
+        MonthStatItem(label = "次数", value = entries.toString(), unit = "次")
+        MonthStatItem(label = "超时", value = overruns.toString(), unit = "次")
     }
 }
 
 @Composable
-private fun MonthStatItem(label: String, value: Int, unit: String) {
+private fun MonthStatItem(label: String, value: String, unit: String) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(label, color = Muted, style = TextStyle(fontSize = 12.sp, letterSpacing = 0.5.sp))
         Row(verticalAlignment = Alignment.Bottom) {
-            Text("$value", color = Ink, style = TextStyle(fontSize = 36.sp, fontWeight = FontWeight.Light, lineHeight = 36.sp))
+            Text(value, color = Ink, style = TextStyle(fontSize = 36.sp, fontWeight = FontWeight.Light, lineHeight = 36.sp))
             Spacer(Modifier.width(4.dp))
             Text(unit, color = Muted, style = TextStyle(fontSize = 12.sp), modifier = Modifier.padding(bottom = 6.dp))
         }

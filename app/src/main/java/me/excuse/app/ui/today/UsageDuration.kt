@@ -25,7 +25,10 @@ internal fun daySessionFragments(
 }
 
 /** 每条片段保留毫秒精度，最后只做一次向下取整，避免很多短 session 被逐条吞掉。 */
-internal fun wholeMinutes(durationsMillis: Sequence<Long>): Int {
+internal fun wholeMinutes(durationsMillis: Sequence<Long>): Int =
+    durationMinutes(totalDurationMillis(durationsMillis))
+
+internal fun totalDurationMillis(durationsMillis: Sequence<Long>): Long {
     var totalMillis = 0L
     durationsMillis.forEach { duration ->
         val positiveDuration = duration.coerceAtLeast(0L)
@@ -35,10 +38,17 @@ internal fun wholeMinutes(durationsMillis: Sequence<Long>): Int {
             totalMillis + positiveDuration
         }
     }
-    return (totalMillis / MILLIS_PER_MINUTE)
+    return totalMillis
+}
+
+private fun durationMinutes(durationMillis: Long): Int =
+    (durationMillis.coerceAtLeast(0L) / MILLIS_PER_MINUTE)
         .coerceAtMost(Int.MAX_VALUE.toLong())
         .toInt()
-}
+
+// 展示前保留毫秒，才能区分“没有用时”和“有用时但不足一分钟”。
+internal fun minuteDisplayValue(durationMillis: Long): String =
+    if (durationMillis in 1L until MILLIS_PER_MINUTE) "<1" else durationMinutes(durationMillis).toString()
 
 internal fun visibleDurationMillis(
     startMillis: Long,
@@ -56,7 +66,16 @@ internal fun usageMinutesInWindow(
     openSessionEndMillis: Long,
     windowStartMillis: Long,
     windowEndMillis: Long,
-): Int = wholeMinutes(
+): Int = durationMinutes(
+    usageDurationMillisInWindow(sessions, openSessionEndMillis, windowStartMillis, windowEndMillis)
+)
+
+internal fun usageDurationMillisInWindow(
+    sessions: Iterable<UsageSession>,
+    openSessionEndMillis: Long,
+    windowStartMillis: Long,
+    windowEndMillis: Long,
+): Long = totalDurationMillis(
     sessions.asSequence().map { session ->
         visibleDurationMillis(
             startMillis = session.startTime,

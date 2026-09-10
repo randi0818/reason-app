@@ -214,15 +214,15 @@ fun DayDetailContent(
         }
     }
 
-    val totalMin = remember(fragments) {
-        wholeMinutes(fragments.asSequence().map { it.displayEnd - it.displayStart })
+    val totalMillis = remember(fragments) {
+        totalDurationMillis(fragments.asSequence().map { it.displayEnd - it.displayStart })
     }
 
     // 注意：DayDetailContent 现在被装在 HorizontalPager 的 page slot 里 ——
     // page slot 是 Box 语义，sibling 会叠在一起。所以这里自己包一层 Column
     // 让 stats+timeline 在上、卡片流在下纵向排布。
     Column(Modifier.fillMaxSize().background(Paper)) {
-        StatsRow(totalMin = totalMin, entries = entries, overruns = overruns)
+        StatsRow(duration = minuteDisplayValue(totalMillis), entries = entries, overruns = overruns)
         Timeline24h(
             sessions = sessions,
             cursorTimestamp = cursorTimestamp,
@@ -301,19 +301,19 @@ private fun MonitoredListGuide(onGoToMonitored: () -> Unit) {
 }
 
 @Composable
-private fun StatsRow(totalMin: Int, entries: Int, overruns: Int) {
+private fun StatsRow(duration: String, entries: Int, overruns: Int) {
     Row(
         Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(32.dp)
     ) {
-        StatItem(label = "时长", value = totalMin, unit = "min")
-        StatItem(label = "次数", value = entries, unit = "次")
-        StatItem(label = "超时", value = overruns, unit = "次")
+        StatItem(label = "时长", value = duration, unit = "min")
+        StatItem(label = "次数", value = entries.toString(), unit = "次")
+        StatItem(label = "超时", value = overruns.toString(), unit = "次")
     }
 }
 
 @Composable
-private fun StatItem(label: String, value: Int, unit: String) {
+private fun StatItem(label: String, value: String, unit: String) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(
             text = label,
@@ -322,7 +322,7 @@ private fun StatItem(label: String, value: Int, unit: String) {
         )
         Row(verticalAlignment = Alignment.Bottom) {
             Text(
-                text = "$value",
+                text = value,
                 color = Ink,
                 style = TextStyle(fontSize = 36.sp, fontWeight = FontWeight.Light, lineHeight = 36.sp)
             )
